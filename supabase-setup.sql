@@ -33,8 +33,19 @@ create policy "Only authenticated admin can delete feedback"
   for delete
   using (auth.role() = 'authenticated');
 
-alter publication supabase_realtime add table public.feedback;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'feedback'
+  ) then
+    alter publication supabase_realtime add table public.feedback;
+  end if;
+end $$;
 
-select tablename, polname, polcmd
+select tablename, policyname, cmd
 from pg_policies
 where tablename = 'feedback';
